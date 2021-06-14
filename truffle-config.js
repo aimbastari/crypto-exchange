@@ -1,5 +1,6 @@
 const path = require("path");
 
+
 module.exports = {
   // See <http://truffleframework.com/docs/advanced/configuration>
   // to customize your Truffle configuration!
@@ -13,6 +14,7 @@ module.exports = {
   },
   compilers: {
     solc: {
+      version: '^0.8.0',
       optimizer: {
         enabled: true,
         runs: 200
