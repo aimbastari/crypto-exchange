@@ -6,15 +6,17 @@ require('../client/node_modules/chai')
     .use(require('../client/node_modules/chai-as-promised'))
     .should()
 
-const tokens = (n) => {
+
+const ether = (n) => {
     return new web3.utils.BN(
         web3.utils.toWei(n.toString(), 'ether')        
     );
-    
 };
 
+const tokens = (n) => ether(n)
+
 const EVM_REVERT = 'VM Exception while processing transaction: revert';
-const ETHER_ADDRESS = '0X000000000000000000000000000'
+const ETHER_ADDRESS = '0x0000000000000000000000000000000000000000';
 
 contract('Exchange', ([deployer, feeAccount, user1, user2]) => {
     let token
@@ -44,11 +46,75 @@ contract('Exchange', ([deployer, feeAccount, user1, user2]) => {
 
     describe('depositing Ether', () => {
         let result
-        beforeEach(async () => {
+        let amount
 
+        beforeEach(async () => {
+            amount = ether(1)
+            result = await exchange.depositEther({from: user1, value: amount})
+        })
+
+        it('tracks the ether deposit', async () => {
+            const balance = await exchange.tokens(ETHER_ADDRESS, user1)
+            balance.toString().should.equal(amount.toString())
+        })
+
+        it('emits a Deposit event', async () => {
+            const log = result.logs[0]
+            log.event.should.eq('Deposit');
+            const event  = log.args
+            event.token.should.equal(ETHER_ADDRESS, 'token address is correct');
+            event.user.should.equal(user1, 'user1 address is correct');
+            event.amount.toString().should.equal(ether(1).toString(), 'value is correct')
+            event.balance.toString().should.equal(ether(1).toString(), 'balance is correct')
         })
 
     })
+
+    describe('Withdraw Ether', () => {
+        let result
+        let amount
+        let balance
+
+        beforeEach(async () => {
+            amount = ether(1)
+            result = await exchange.depositEther({from: user1, value: amount})
+        })
+
+        describe('success', () => {
+            beforeEach(async () => {
+                result = await exchange.withdrawEther(amount, {from: user1})
+            })
+
+
+            it('Withdraw ether funds', async () => {
+                balance = await exchange.tokens(ETHER_ADDRESS, user1)
+                balance.toString().should.equal('0')
+            })
+
+            it('emits a Withdraw event', async () => {
+                const log = result.logs[0]
+                log.event.should.eq('Withdraw');
+                const event  = log.args
+                event.token.should.equal(ETHER_ADDRESS, 'token address is correct');
+                event.user.should.equal(user1, 'user1 address is correct');
+                event.amount.toString().should.equal(ether(1).toString(), 'value is correct')
+                event.balance.toString().should.equal(ether(0).toString(), 'balance is correct')
+            })
+
+        })
+
+        describe('failure', () => {
+
+            it('rejects Withdraw for insufficient balances', async () => {
+                await exchange.withdrawEther(ether(100), {from: user1})
+                    .should.be.rejectedWith(EVM_REVERT);
+            })
+
+        })
+
+
+    })
+
 
     describe('depositing tokens', () => {
         let result
@@ -78,9 +144,6 @@ contract('Exchange', ([deployer, feeAccount, user1, user2]) => {
 
         })
 
-
-
-
         describe('failure', () => {
             it('rejects Ether Deposits', async () => {
                 await exchange.depositToken(ETHER_ADDRESS, tokens(10), {from: user1})
@@ -91,6 +154,17 @@ contract('Exchange', ([deployer, feeAccount, user1, user2]) => {
                 await exchange.depositToken(token.address, tokens(10), {from: user1})
                     .should.be.rejected;                 
             })
+        })
+
+    })
+
+    describe('depositing tokens', () => {
+    let result
+    let amount = tokens(10)
+
+        it('reverts when ether is sent', async () => {
+            await exchange.sendTransaction({value: 1, from: user1})
+                .should.be.rejectedWith(EVM_REVERT)
         })
 
     })
