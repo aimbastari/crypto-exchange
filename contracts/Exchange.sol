@@ -7,7 +7,7 @@ import "../client/node_modules/@openzeppelin/contracts/utils/math/SafeMath.sol";
 contract Exchange {
     using SafeMath for uint;
 
-    address public feeAccount;
+    address public feeAccount; //account receives fees
     uint256 public feePercent;
     
     address constant ETHER = address(0);
@@ -21,10 +21,13 @@ contract Exchange {
     event Withdraw(address token, address user, uint256 amount, uint256 balance);
 
     constructor (address _feeAccount, uint256 _feePercent) public {
+        //Set the fee and feeAccount    
         feeAccount = _feeAccount;
         feePercent = _feePercent;
     }
     
+    
+    //deposit & withdraw
     function depositToken(address _token, uint _amount) public {
         //Dont allow ether deposits
         require(_token != ETHER);
@@ -33,6 +36,17 @@ contract Exchange {
 
         emit Deposit(_token, msg.sender, _amount, tokens[_token][msg.sender]);
     }
+    
+    function withdrawToken(address _token, uint _amount) public {
+        require(_token != ETHER);
+        require(tokens[_token][msg.sender] >= _amount);
+        tokens[_token][msg.sender] = tokens[_token][msg.sender].sub(_amount);
+        require(Token(_token).transfer(msg.sender, _amount));     
+
+        emit Withdraw(_token, msg.sender, _amount, tokens[_token][msg.sender]);
+    }
+    
+    
 
     function depositEther() payable public {
         tokens[ETHER][msg.sender] = tokens[ETHER][msg.sender].add(msg.value);
@@ -48,9 +62,20 @@ contract Exchange {
     }
 
 
+    function balanceOf(address _token, address _user) public view returns (uint256){
+    
+        return tokens[_token][_user];
+    }
+    
 
+    //manage orders -make or cancel
+    //handle trades
+    //check balance
+    
+    //charge fees
+    
+
+    
 
 }
-    //deposit & withdraw
-    //manage orders
-    //handle trades
+
