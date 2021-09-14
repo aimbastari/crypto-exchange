@@ -15,10 +15,45 @@ contract Exchange {
     //token address -> user -> amount
     mapping(address => mapping(address => uint)) public tokens;
 
+    //Orders
+    mapping(uint256 => _Order) public orders;
+    mapping(uint256 => bool) public ordersCancelled;
+    uint256 public orderCount;    
 
     //Events
     event Deposit(address token, address user, uint256 amount, uint256 balance);
     event Withdraw(address token, address user, uint256 amount, uint256 balance);
+    event Order(
+        uint256 id,
+        address user,
+        address tokenGet,
+        uint256 amountGet,
+        address tokenGive,
+        uint256 amountGive,
+        uint256 timestamp
+    );
+    event Cancel(
+        uint256 id,
+        address user,
+        address tokenGet,
+        uint256 amountGet,
+        address tokenGive,
+        uint256 amountGive,
+        uint256 timestamp
+    );
+    
+
+    //Structures
+    struct _Order {
+        uint256 id;
+        address user;
+        address tokenGet;
+        uint256 amountGet;
+        address tokenGive;
+        uint256 amountGive;
+        uint256 timestamp;
+    }
+
 
     constructor (address _feeAccount, uint256 _feePercent) public {
         //Set the fee and feeAccount    
@@ -67,10 +102,24 @@ contract Exchange {
         return tokens[_token][_user];
     }
     
-
-    //manage orders -make or cancel
+    function makeOrder(address _tokenGet, uint256 _amountGet, address _tokenGive, uint256 _amountGive) public {
+        orderCount = orderCount.add(1);
+        orders[orderCount] = _Order(orderCount, msg.sender, _tokenGet, _amountGet, _tokenGive, _amountGive, block.timestamp);
+        
+        emit Order(orderCount, msg.sender, _tokenGet, _amountGet, _tokenGive, _amountGive, block.timestamp);
+    }
+    
+    function cancelOrder(uint256 id) public {
+        _Order storage _order = orders[id];
+        require(address(_order.user) == msg.sender);
+        ordersCancelled[id]= true;
+        
+        emit Cancel(_order.id, _order.user, _order.tokenGet, _order.amountGet, _order.tokenGive, _order.amountGive, block.timestamp);
+    }
+    
+    
+    
     //handle trades
-    //check balance
     
     //charge fees
     
