@@ -78,7 +78,7 @@ contract('Exchange', ([deployer, feeAccount, user1, user2]) => {
 
     })
 
-    describe('Withdraw Ether', () => {
+    describe('withdraw Ether', () => {
         let result
         let amount
         let balance
@@ -217,24 +217,37 @@ contract('Exchange', ([deployer, feeAccount, user1, user2]) => {
 
     })
     
-    describe('checking balances', () => {
-        let amount
-        
+    describe('check balance', () => {
+
         beforeEach(async () => {
-            amount = tokens(10)
-            await token.approve(exchange.address, amount, {from: user1 })
-            await exchange.depositEther({ from: user1, value: amount})
-            
+            await exchange.depositEther({from: user1, value: ether(1)});
         })
 
-    
-        it('returns user balance', async () => {
-            const result = await exchange.balanceOf(ETHER_ADDRESS, user1);
-            result.toString().should.equal(ether(10).toString());
+        it('check that balance increased', async () => {
+            const balance = await exchange.balanceOf(ETHER_ADDRESS, user1);
+            balance.toString().should.equal(ether(1).toString());
         })
         
-    
     })
+    
+    
+    
+    
+    describe('making orders', () => {
+        let result;
+        
+        beforeEach(async () => {
+            result = await exchange.makeOrder(token.address, tokens(1), ETHER_ADDRESS, ether(1), {from: user1});
+        })
+
+        it('check ordercount increased', async () => {
+            const resultOrderCount = await exchange.orderCount();
+            resultOrderCount.toString().should.equal('1');
+        })
+        
+    })
+    
+    
 
     
 })
