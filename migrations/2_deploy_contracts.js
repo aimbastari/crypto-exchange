@@ -1,12 +1,16 @@
-var Token = artifacts.require("./Token.sol");
-var Exchange = artifacts.require("./Exchange.sol");
+var Token = artifacts.require("Token.sol");
+var Exchange = artifacts.require("Exchange.sol");
 
-module.exports = function(deployer) {
-  deployer.deploy(Token);
+module.exports = async function(deployer) {
+  
+  const accounts = await web3.eth.getAccounts()
+  
+  await deployer.deploy(Token);
+  
+  const feeAccount = accounts[0]
+  const feePercent = 10;
+  
+  await deployer.deploy(Exchange, feeAccount, feePercent);
+  
+  
 };
-
-/*
-module.exports = function(deployer) {
-  deployer.deploy(Exchange, '0xF619b7761d7Ed94D0F3B218C69307958486014ac', 10);
-};
-*/
